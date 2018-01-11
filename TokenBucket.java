@@ -1,3 +1,5 @@
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * A Token Bucket (https://en.wikipedia.org/wiki/Token_bucket)
  *
@@ -11,6 +13,9 @@
  *
  */
 class TokenBucket {
+    AtomicLong tokens;
+    int refillAmount;
+    double refillTime;
 
     TokenBucket() {
         //TODO
@@ -29,6 +34,10 @@ class TokenBucket {
     }
 
     void set(long tokens) {
+        //TODO
+    }
+
+    void add(long tokens) {
         //TODO
     }
 }
