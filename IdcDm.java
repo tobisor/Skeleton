@@ -68,6 +68,12 @@ public class IdcDm {
         }
 
         //join fileWriter
+        try{
+            fileWriter.join();
+            executor.shutdown();
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 }

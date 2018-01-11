@@ -13,9 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  */
 class TokenBucket {
-    AtomicLong tokens;
-    int refillAmount;
-    double refillTime;
+    
 
     TokenBucket() {
         //TODO
