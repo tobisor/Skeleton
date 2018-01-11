@@ -1,7 +1,7 @@
 import java.util.concurrent.*;
 
 public class IdcDm {
-
+    private final static int QUEUE_CAPACITY = 16;
     /**
      * Receive arguments from the command-line, provide some feedback and start the download.
      *
@@ -45,6 +45,29 @@ public class IdcDm {
      * @param maxBytesPerSecond limit on download bytes-per-second
      */
     private static void DownloadURL(String url, int numberOfWorkers, Long maxBytesPerSecond) {
-        //TODO
+        TokenBucket tockenBucket = new TokenBucket();
+        //BlockingQueue<Range> rangeQueue = new ArrayBlockingQueue<Range>(QUEUE_CAPACITY);
+        BlockingQueue<Chunk> chunkQueue = new ArrayBlockingQueue<Chunk>(QUEUE_CAPACITY);
+        DownloadableMetadata downloadedMetaFile = new DownloadableMetadata(url);
+
+        //new file writer thread
+        Thread fileWriter = new Thread(new FileWriter(downloadedMetaFile, chunkQueue));
+        fileWriter.start();
+
+        //initiate thread pool
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(numberOfWorkers);
+        //initate
+        executor.scheduleAtFixedRate(()-> {
+          tockenBucket.add(maxBytesPerSecond);
+            downloadedMetaFile.printPrecentageLeft();
+        },0,1000L,TimeUnit.MILLISECONDS);
+        for (int i = 0; i < numberOfWorkers; i++){
+            Thread worker = new Thread(new HTTPRangeGetter
+                    (url ,downloadedMetaFile.getMissingRange(),chunkQueue,tockenBucket));
+            executor.execute(worker);
+        }
+
+        //join fileWriter
+
     }
 }
