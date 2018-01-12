@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  */
 class TokenBucket {
-    
+
 
     TokenBucket() {
         //TODO

@@ -40,6 +40,7 @@ class DownloadableMetadata {
     }
 
     void delete() {
+
         //TODO
     }
 

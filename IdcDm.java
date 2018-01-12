@@ -45,10 +45,13 @@ public class IdcDm {
      * @param maxBytesPerSecond limit on download bytes-per-second
      */
     private static void DownloadURL(String url, int numberOfWorkers, Long maxBytesPerSecond) {
-        TokenBucket tockenBucket = new TokenBucket();
+        TokenBucket tokenBucket = new TokenBucket();
         //BlockingQueue<Range> rangeQueue = new ArrayBlockingQueue<Range>(QUEUE_CAPACITY);
         BlockingQueue<Chunk> chunkQueue = new ArrayBlockingQueue<Chunk>(QUEUE_CAPACITY);
         DownloadableMetadata downloadedMetaFile = new DownloadableMetadata(url);
+
+        //new rate limiter thread
+        Thread rateLimiter = new Thread(new RateLimiter(tokenBucket,maxBytesPerSecond));
 
         //new file writer thread
         Thread fileWriter = new Thread(new FileWriter(downloadedMetaFile, chunkQueue));
@@ -56,14 +59,14 @@ public class IdcDm {
 
         //initiate thread pool
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(numberOfWorkers);
-        //initate
+        //initiate scheduled thread calling printPrecentageLeft() every 5 seconds
         executor.scheduleAtFixedRate(()-> {
-          tockenBucket.add(maxBytesPerSecond);
             downloadedMetaFile.printPrecentageLeft();
-        },0,1000L,TimeUnit.MILLISECONDS);
+        },0,5000L,TimeUnit.MILLISECONDS);
+        rateLimiter.run();
         for (int i = 0; i < numberOfWorkers; i++){
             Thread worker = new Thread(new HTTPRangeGetter
-                    (url ,downloadedMetaFile.getMissingRange(),chunkQueue,tockenBucket));
+                    (url ,downloadedMetaFile.getMissingRange(),chunkQueue,tokenBucket));
             executor.execute(worker);
         }
 
@@ -71,9 +74,14 @@ public class IdcDm {
         try{
             fileWriter.join();
             executor.shutdown();
+            while (!executor.isTerminated()){}
         }catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        //stop rate limiter. not sure if it is working the way it should...
+        rateLimiter.interrupt();
+
 
     }
 }
